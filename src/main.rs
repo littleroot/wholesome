@@ -10,6 +10,7 @@ use reqwest::Client as HttpClient;
 use std::env;
 use std::io;
 use std::net::SocketAddr;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -24,38 +25,83 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let reddit_client_secret =
         env::var("REDDIT_CLIENT_SECRET").context("REDDIT_CLIENT_SECRET missing")?;
 
-    let http = HttpClient::new();
-    let token = reddit_access_token(&http, &reddit_client_id, &reddit_client_secret).await?;
-    info!("{}", token);
-    let meme = hot_wholesome_meme(&http, &token).await?;
-    info!("{:?}", meme);
+    let wholesome_svc = Arc::new(WholesomeService {
+        reddit_client_id,
+        reddit_client_secret,
+        http: HttpClient::new(),
+    });
 
     let port = determine_port()?;
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
 
+    let make_service = make_service_fn(|_| {
+        let w = Arc::clone(&wholesome_svc);
+        async move {
+            Ok::<_, hyper::Error>(service_fn(move |req| {
+                let w = Arc::clone(&w);
+                handle_request(req, w)
+            }))
+        }
+    });
+    let server = Server::bind(&addr).serve(make_service);
     info!("listening on {}", addr);
-
-    let service = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(hello)) });
-    let server = Server::bind(&addr).serve(service);
-
     server.await?;
 
     Ok(())
 }
 
-async fn hello(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+struct WholesomeService {
+    reddit_client_id: String,
+    reddit_client_secret: String,
+    http: HttpClient,
+}
+
+async fn handle_request(
+    req: Request<Body>,
+    w: Arc<WholesomeService>,
+) -> Result<Response<Body>, hyper::Error> {
     match (req.method(), req.uri().path()) {
-        (&Method::GET, "/") => Ok(Response::new(Body::from("hello, world!"))),
-        (_, "/") => {
-            let mut rsp = Response::default();
-            *rsp.status_mut() = StatusCode::METHOD_NOT_ALLOWED;
-            Ok(rsp)
-        }
+        (_, "/") => root(req, w).await,
         _ => {
             let mut rsp = Response::default();
             *rsp.status_mut() = StatusCode::NOT_FOUND;
             Ok(rsp)
         }
+    }
+}
+
+async fn root(
+    req: Request<Body>,
+    w: Arc<WholesomeService>,
+) -> Result<Response<Body>, hyper::Error> {
+    match (req.method(), req.uri().path()) {
+        (&Method::GET, "/") => {
+            let token =
+                reddit_access_token(&w.http, &w.reddit_client_id, &w.reddit_client_secret).await;
+            if let Err(e) = token {
+                error!("fetch reddit access token: {}", e);
+                let mut rsp = Response::default();
+                *rsp.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+                return Ok(rsp);
+            }
+
+            let meme = hot_wholesome_meme(&w.http, &token.unwrap()).await;
+            if let Err(e) = meme {
+                error!("fetch wholesome meme: {}", e);
+                let mut rsp = Response::default();
+                *rsp.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+                return Ok(rsp);
+            }
+
+            info!("{:?}", meme.unwrap());
+            Ok(Response::new(Body::from("hello, world!")))
+        }
+        (_, "/") => {
+            let mut rsp = Response::default();
+            *rsp.status_mut() = StatusCode::METHOD_NOT_ALLOWED;
+            Ok(rsp)
+        }
+        _ => unreachable!(),
     }
 }
 

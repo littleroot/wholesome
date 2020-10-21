@@ -4,11 +4,13 @@ use std::fmt;
 
 const USER_AGENT: &str = "reqwest";
 
+type BoxError = Box<dyn std::error::Error + Send + Sync>;
+
 pub async fn reddit_access_token(
     http: &HttpClient,
     client_id: &str,
     client_secret: &str,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<String, BoxError> {
     let form = reqwest::multipart::Form::new().text("grant_type", "client_credentials");
     let rsp = http
         .post("https://www.reddit.com/api/v1/access_token")
@@ -23,10 +25,7 @@ pub async fn reddit_access_token(
     Ok(rsp.access_token)
 }
 
-pub async fn hot_wholesome_meme(
-    http: &HttpClient,
-    access_token: &str,
-) -> Result<Post, Box<dyn std::error::Error>> {
+pub async fn hot_wholesome_meme(http: &HttpClient, access_token: &str) -> Result<Post, BoxError> {
     let rsp = http
         .get("https://oauth.reddit.com/r/wholesomememes/hot.json")
         .query(&[("limit", "1")])
