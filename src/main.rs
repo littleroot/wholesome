@@ -11,6 +11,9 @@ use std::env;
 use std::io;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
+
+const HTTP_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -28,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let wholesome_svc = Arc::new(WholesomeService {
         reddit_client_id,
         reddit_client_secret,
-        http: HttpClient::new(),
+        http: HttpClient::builder().timeout(HTTP_TIMEOUT).build().unwrap(),
     });
 
     let port = determine_port()?;
