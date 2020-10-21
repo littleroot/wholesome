@@ -66,8 +66,10 @@ async fn handle_request(
     match (req.method(), req.uri().path()) {
         (_, "/") => root(req, w).await,
         _ => {
-            let mut rsp = Response::default();
-            *rsp.status_mut() = StatusCode::NOT_FOUND;
+            let rsp = Response::builder()
+                .status(StatusCode::NOT_FOUND)
+                .body(Body::empty())
+                .unwrap();
             Ok(rsp)
         }
     }
@@ -83,16 +85,20 @@ async fn root(
                 reddit_access_token(&w.http, &w.reddit_client_id, &w.reddit_client_secret).await;
             if let Err(e) = token {
                 error!("fetch reddit access token: {}", e);
-                let mut rsp = Response::default();
-                *rsp.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+                let rsp = Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Body::empty())
+                    .unwrap();
                 return Ok(rsp);
             }
 
             let meme = hot_wholesome_meme(&w.http, &token.unwrap()).await;
             if let Err(e) = meme {
                 error!("fetch wholesome meme: {}", e);
-                let mut rsp = Response::default();
-                *rsp.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+                let rsp = Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Body::empty())
+                    .unwrap();
                 return Ok(rsp);
             }
 
@@ -100,8 +106,10 @@ async fn root(
             Ok(Response::new(Body::from("hello, world!")))
         }
         (_, "/") => {
-            let mut rsp = Response::default();
-            *rsp.status_mut() = StatusCode::METHOD_NOT_ALLOWED;
+            let rsp = Response::builder()
+                .status(StatusCode::METHOD_NOT_ALLOWED)
+                .body(Body::empty())
+                .unwrap();
             Ok(rsp)
         }
         _ => unreachable!(),
