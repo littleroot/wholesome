@@ -1,7 +1,10 @@
 mod reddit;
 
-use crate::reddit::{hot_wholesome_meme, reddit_access_token};
+use crate::reddit::{hottest_wholesome_meme, reddit_access_token, Post};
 use anyhow::{anyhow, Context, Error};
+use horrorshow::helper::doctype;
+use horrorshow::html;
+use horrorshow::prelude::*;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use log::*;
@@ -28,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let reddit_client_secret =
         env::var("REDDIT_CLIENT_SECRET").context("REDDIT_CLIENT_SECRET missing")?;
 
-    let wholesome_svc = Arc::new(WholesomeService {
+    let wholesome_svr = Arc::new(WholesomeServer {
         reddit_client_id,
         reddit_client_secret,
         http: HttpClient::builder().timeout(HTTP_TIMEOUT).build().unwrap(),
@@ -38,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
 
     let make_service = make_service_fn(|_| {
-        let w = Arc::clone(&wholesome_svc);
+        let w = Arc::clone(&wholesome_svr);
         async move {
             Ok::<_, hyper::Error>(service_fn(move |req| {
                 let w = Arc::clone(&w);
@@ -53,7 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-struct WholesomeService {
+struct WholesomeServer {
     reddit_client_id: String,
     reddit_client_secret: String,
     http: HttpClient,
@@ -61,49 +64,110 @@ struct WholesomeService {
 
 async fn handle_request(
     req: Request<Body>,
-    w: Arc<WholesomeService>,
+    s: Arc<WholesomeServer>,
 ) -> Result<Response<Body>, hyper::Error> {
     match (req.method(), req.uri().path()) {
-        (_, "/") => root(req, w).await,
+        (_, "/") => root(req, s).await,
         _ => {
             let rsp = Response::builder()
                 .status(StatusCode::NOT_FOUND)
-                .body(Body::empty())
+                .body(Body::from("not found"))
                 .unwrap();
             Ok(rsp)
         }
     }
 }
 
-async fn root(
-    req: Request<Body>,
-    w: Arc<WholesomeService>,
-) -> Result<Response<Body>, hyper::Error> {
+fn render_root_template(post: Post) -> String {
+    let style = r#"
+html, body {
+    margin: 0;
+    padding: 0;
+}
+html {
+    font-family: sans-serif;
+}
+body {
+    margin: 0 15px;
+}
+p.title {
+    font-size: larger;
+    margin-bottom: 3em;
+    display: flex;
+    justify-content: center;
+}
+a.meme {
+    display: flex;
+    justify-content: center;
+}
+img.meme {
+    max-width: 100%;
+}
+"#;
+
+    (html! {
+        : doctype::HTML;
+        html {
+            head {
+                meta(charset="UTF-8");
+                meta(name="viewport", content="width=device-width");
+                title {
+                    : "A wholesome meme";
+                }
+                style {
+                    : style
+                }
+            }
+            body {
+                main {
+                    p(class="title") {
+                        a(href=format!("https://reddit.com/{}", &post.permalink)) {
+                            : &post.title;
+                        }
+                    }
+                    // TODO: handle Option on post.url
+                    a(class="meme", href=&post.url) {
+                        img(class="meme", src=&post.url, alt="The hottest wholesome meme on Reddit right now");
+                    }
+                }
+            }
+        }
+    })
+    .into_string()
+    .unwrap()
+}
+
+async fn root(req: Request<Body>, s: Arc<WholesomeServer>) -> Result<Response<Body>, hyper::Error> {
     match (req.method(), req.uri().path()) {
         (&Method::GET, "/") => {
             let token =
-                reddit_access_token(&w.http, &w.reddit_client_id, &w.reddit_client_secret).await;
+                reddit_access_token(&s.http, &s.reddit_client_id, &s.reddit_client_secret).await;
             if let Err(e) = token {
                 error!("fetch reddit access token: {}", e);
                 let rsp = Response::builder()
                     .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(Body::empty())
+                    .body(Body::from(
+                        "internal server error: failed to fetch reddit access token",
+                    ))
                     .unwrap();
                 return Ok(rsp);
             }
 
-            let meme = hot_wholesome_meme(&w.http, &token.unwrap()).await;
+            let meme = hottest_wholesome_meme(&s.http, &token.unwrap()).await;
             if let Err(e) = meme {
                 error!("fetch wholesome meme: {}", e);
                 let rsp = Response::builder()
                     .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(Body::empty())
+                    .body(Body::from(
+                        "internal server error: failed to fetch wholesome meme",
+                    ))
                     .unwrap();
                 return Ok(rsp);
             }
 
-            info!("{:?}", meme.unwrap());
-            Ok(Response::new(Body::from("hello, world!")))
+            Ok(Response::new(Body::from(render_root_template(
+                meme.unwrap(),
+            ))))
         }
         (_, "/") => {
             let rsp = Response::builder()

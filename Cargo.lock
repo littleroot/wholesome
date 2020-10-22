@@ -276,6 +276,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "horrorshow"
+version = "0.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87ce7e0a1bc8e4489896abc94e5664e811a502a151bebfe113b3214fa181d3fb"
+
+[[package]]
 name = "http"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1204,6 +1210,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "futures",
+ "horrorshow",
  "hyper",
  "log",
  "logosaurus",

@@ -25,7 +25,10 @@ pub async fn reddit_access_token(
     Ok(rsp.access_token)
 }
 
-pub async fn hot_wholesome_meme(http: &HttpClient, access_token: &str) -> Result<Post, BoxError> {
+pub async fn hottest_wholesome_meme(
+    http: &HttpClient,
+    access_token: &str,
+) -> Result<Post, BoxError> {
     let rsp = http
         .get("https://oauth.reddit.com/r/wholesomememes/hot.json")
         .query(&[("limit", "1")])
@@ -75,9 +78,9 @@ struct Child {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ChildData {
-    title: String,
-    permalink: String,
-    url: Option<String>,
+    pub title: String,
+    pub permalink: String,
+    pub url: Option<String>,
 }
 
 pub type Post = ChildData;
