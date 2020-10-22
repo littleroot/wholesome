@@ -19,7 +19,7 @@ cloud-build:
 
 .PHONY: deploy
 deploy:
-	gcloud --project ${PROJECT_ID} run deploy \
+	gcloud --project ${PROJECT_ID} run deploy wholesome \
 		--image gcr.io/${PROJECT_ID}/wholesome \
 		--set-env-vars "REDDIT_CLIENT_ID=${REDDIT_CLIENT_ID}" \
 		--set-env-vars "REDDIT_CLIENT_SECRET=${REDDIT_CLIENT_SECRET}"

@@ -122,7 +122,7 @@ img.meme {
                 main {
                     p(class="title") {
                         a(href=format!("https://reddit.com{}", &post.permalink)) {
-                            : &post.title;
+                            : Raw(&post.title);
                         }
                     }
                     // TODO: handle Option on post.url
