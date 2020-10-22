@@ -79,7 +79,7 @@ async fn handle_request(
 }
 
 fn render_root_template(post: Post) -> String {
-    let style = r#"
+    let style = r"
 html, body {
     margin: 0;
     padding: 0;
@@ -103,7 +103,7 @@ a.meme {
 img.meme {
     max-width: 100%;
 }
-"#;
+";
 
     (html! {
         : doctype::HTML;
