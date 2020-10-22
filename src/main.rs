@@ -1,6 +1,6 @@
 mod reddit;
 
-use crate::reddit::{hottest_wholesome_meme, reddit_access_token, Post};
+use crate::reddit::{hot_wholesome_meme, reddit_access_token, Post};
 use anyhow::{anyhow, Context, Error};
 use horrorshow::helper::doctype;
 use horrorshow::html;
@@ -88,7 +88,7 @@ html {
     font-family: sans-serif;
 }
 body {
-    margin: 0 15px;
+    margin: 0 15px 5px;
 }
 p.title {
     font-size: larger;
@@ -127,7 +127,7 @@ img.meme {
                     }
                     // TODO: handle Option on post.url
                     a(class="meme", href=&post.url) {
-                        img(class="meme", src=&post.url, alt="The hottest wholesome meme on Reddit right now");
+                        img(class="meme", src=&post.url, alt="A wholesome meme from the subreddit r/wholesomememes");
                     }
                 }
             }
@@ -153,7 +153,7 @@ async fn root(req: Request<Body>, s: Arc<WholesomeServer>) -> Result<Response<Bo
                 return Ok(rsp);
             }
 
-            let meme = hottest_wholesome_meme(&s.http, &token.unwrap()).await;
+            let meme = hot_wholesome_meme(&s.http, &token.unwrap()).await;
             if let Err(e) = meme {
                 error!("fetch wholesome meme: {}", e);
                 let rsp = Response::builder()

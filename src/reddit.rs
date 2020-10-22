@@ -25,13 +25,10 @@ pub async fn reddit_access_token(
     Ok(rsp.access_token)
 }
 
-pub async fn hottest_wholesome_meme(
-    http: &HttpClient,
-    access_token: &str,
-) -> Result<Post, BoxError> {
+pub async fn hot_wholesome_meme(http: &HttpClient, access_token: &str) -> Result<Post, BoxError> {
     let rsp = http
         .get("https://oauth.reddit.com/r/wholesomememes/hot.json")
-        .query(&[("limit", "1")])
+        .query(&[("limit", "2")]) // we want second hottest meme
         .bearer_auth(access_token)
         .header(reqwest::header::USER_AGENT, USER_AGENT)
         .send()
