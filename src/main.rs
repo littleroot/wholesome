@@ -121,7 +121,7 @@ img.meme {
             body {
                 main {
                     p(class="title") {
-                        a(href=format!("https://reddit.com/{}", &post.permalink)) {
+                        a(href=format!("https://reddit.com{}", &post.permalink)) {
                             : &post.title;
                         }
                     }
