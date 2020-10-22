@@ -88,17 +88,16 @@ html {
     font-family: sans-serif;
 }
 body {
-    margin: 0 15px 5px;
+    margin: 0 6px 5px;
 }
 p.title {
     font-size: larger;
     margin-bottom: 3em;
-    display: flex;
-    justify-content: center;
 }
-a.meme {
-    display: flex;
-    justify-content: center;
+main {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
 }
 img.meme {
     max-width: 100%;
