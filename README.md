@@ -2,6 +2,8 @@
 
 Get a wholesome meme.
 
+![wholesome meme image](./wholesome-meme.png)
+
 https://wm.littleroot.org
 
 ## Local use
