@@ -90,17 +90,13 @@ html {
 body {
     margin: 0 6px 5px;
 }
-p.title {
-    font-size: larger;
-    margin-bottom: 3em;
-}
-main {
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-}
 img.meme {
     max-width: 100%;
+}
+@media (min-width: 750px) {
+    img.meme {
+        max-width: 540px;
+    }
 }
 ";
 
