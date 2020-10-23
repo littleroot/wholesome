@@ -95,7 +95,7 @@ img.meme {
 }
 @media (min-width: 750px) {
     img.meme {
-        max-width: 540px;
+        max-height: 85vh;
     }
 }
 ";
