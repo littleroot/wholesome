@@ -4,8 +4,6 @@ Get a wholesome meme.
 
 ![wholesome meme image](./wholesome-meme.png)
 
-https://wm.littleroot.org
-
 ## Local use
 
 Set the environment variables `REDDIT_CLIENT_ID` and `REDDIT_CLIENT_SECRET` to
